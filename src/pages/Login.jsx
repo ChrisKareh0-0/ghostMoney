@@ -33,7 +33,7 @@ function Login({ onLogin }) {
                 <div className="login-header">
                     <span className="login-icon">👻</span>
                     <h1 className="login-title">GhostMoney</h1>
-                    <p className="login-subtitle">Gaming Lounge Management</p>
+                    <p className="login-subtitle">Because you can't even see it</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="login-form">

@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "concurrently \"vite\" \"electron .\"",
     "build": "vite build",
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild:win": "electron-builder install-app-deps --platform win32 --arch x64",
+    "build:win": "npm run build && npm run rebuild:win && electron-builder --win --x64",
     "build:electron": "electron-builder",
     "preview": "vite preview"
   },
@@ -41,16 +44,41 @@
     "appId": "com.ghostmoney.app",
     "productName": "GhostMoney",
     "directories": {
-      "output": "dist-electron"
+      "output": "dist-electron",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "package.json"
+      "package.json",
+      "!electron/**/*.map",
+      "!**/*.md"
+    ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*"
     ],
     "win": {
-      "target": "nsis",
-      "icon": "build/icon.ico"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "publisherName": "GhostMoney",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "electronDownload": {
+      "cache": ".electron-cache"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GhostMoney",
+      "deleteAppDataOnUninstall": false
     }
   }
 }
