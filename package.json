@@ -9,6 +9,8 @@
     "postinstall": "electron-builder install-app-deps",
     "rebuild:win": "electron-builder install-app-deps --platform win32 --arch x64",
     "build:win": "npm run build && npm run rebuild:win && electron-builder --win --x64",
+    "build:mac": "npm run build && electron-builder --mac --x64 --arm64",
+    "build:mac:intel": "npm run build && electron-builder --mac --x64",
     "build:electron": "electron-builder",
     "preview": "vite preview"
   },
@@ -50,6 +52,7 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "node_modules/**/*",
       "package.json",
       "!electron/**/*.map",
       "!**/*.md"
@@ -57,6 +60,41 @@
     "asarUnpack": [
       "node_modules/better-sqlite3/**/*"
     ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.business",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "title": "GhostMoney ${version}",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
     "win": {
       "target": [
         {
