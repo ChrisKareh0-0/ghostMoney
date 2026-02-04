@@ -68,6 +68,23 @@ function Reports({ user }) {
         }
     };
 
+    const handleBackup = async () => {
+        setLoading(true);
+        try {
+            const result = await window.electronAPI.backupDatabase();
+            if (result.success) {
+                alert(`Database backup created successfully!\n\nFile saved to: ${result.filePath}`);
+            } else if (result.error !== 'Backup cancelled') {
+                alert('Backup failed: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Backup error:', error);
+            alert('Backup failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div>
             <div style={{ marginBottom: '2rem' }}>
@@ -231,6 +248,25 @@ function Reports({ user }) {
                             ${clients.reduce((sum, c) => sum + c.balance, 0).toFixed(2)}
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* Database Backup */}
+            <div className="card" style={{ marginTop: '2rem' }}>
+                <div className="card-header">
+                    <h3 className="card-title">💾 Database Backup</h3>
+                </div>
+                <div>
+                    <p className="text-muted" style={{ marginBottom: '1rem' }}>
+                        Create a backup of your entire database. Keep this file safe for data recovery.
+                    </p>
+                    <button
+                        onClick={handleBackup}
+                        className="btn btn-primary"
+                        disabled={loading}
+                    >
+                        💾 Create Backup
+                    </button>
                 </div>
             </div>
         </div>

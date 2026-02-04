@@ -436,6 +436,27 @@ tbody tr:hover {
 
 .w-full { width: 100%; }
 
+/* Form Checkbox */
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.form-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green-primary);
+  cursor: pointer;
+}
+
+.form-checkbox span {
+  user-select: none;
+}
+
 /* Loading Spinner */
 .spinner {
   border: 3px solid var(--bg-tertiary);
@@ -487,16 +508,40 @@ tbody tr:hover {
   box-shadow: 0 8px 24px var(--green-glow);
 }
 
-.stat-value {
+.stat-icon {
   font-size: 2.5rem;
+  margin-bottom: var(--spacing-sm);
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 2rem;
   font-weight: 700;
   color: var(--green-primary);
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-value.warning {
+  color: var(--warning-color);
+}
+
+.stat-value.success {
+  color: var(--success-color);
+}
+
+.stat-value.danger {
+  color: var(--error-color);
 }
 
 .stat-label {
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+  text-align: center;
 }

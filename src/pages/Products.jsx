@@ -13,6 +13,7 @@ function Products({ user }) {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [showProductForm, setShowProductForm] = useState(false);
     const [showCategoryManager, setShowCategoryManager] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         loadCategories();
@@ -61,13 +62,17 @@ function Products({ user }) {
             return;
         }
 
+        setError('');
         try {
             const result = await window.electronAPI.deleteProduct(id);
             if (result.success) {
                 loadProducts();
+            } else {
+                setError(result.error || 'Failed to delete product');
             }
         } catch (error) {
             console.error('Error deleting product:', error);
+            setError('An error occurred while deleting the product');
         }
     };
 
@@ -121,6 +126,18 @@ function Products({ user }) {
                     ))}
                 </select>
             </div>
+
+            {error && (
+                <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
+                    {error}
+                    <button 
+                        onClick={() => setError('')} 
+                        style={{ marginLeft: '1rem', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
 
             {products.length === 0 ? (
                 <div className="empty-state">

@@ -7,6 +7,7 @@ function Users({ user }) {
     const [loading, setLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
     const [showUserForm, setShowUserForm] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         loadUsers();
@@ -37,7 +38,7 @@ function Users({ user }) {
 
     const handleDeleteUser = async (id) => {
         if (id === user.id) {
-            alert('You cannot delete your own account!');
+            setError('You cannot delete your own account!');
             return;
         }
 
@@ -45,13 +46,17 @@ function Users({ user }) {
             return;
         }
 
+        setError('');
         try {
             const result = await window.electronAPI.deleteUser(id);
             if (result.success) {
                 loadUsers();
+            } else {
+                setError(result.error || 'Failed to delete user');
             }
-        } catch (error) {
-            console.error('Error deleting user:', error);
+        } catch (err) {
+            console.error('Error deleting user:', err);
+            setError('An error occurred while deleting the user');
         }
     };
 
@@ -79,6 +84,18 @@ function Users({ user }) {
                     + Add User
                 </button>
             </div>
+
+            {error && (
+                <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
+                    {error}
+                    <button 
+                        onClick={() => setError('')} 
+                        style={{ marginLeft: '1rem', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
 
             {users.length === 0 ? (
                 <div className="empty-state">

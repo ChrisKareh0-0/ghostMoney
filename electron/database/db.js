@@ -7,6 +7,7 @@ class DatabaseService {
   constructor(dbPath) {
     this.db = new Database(dbPath);
     this.db.pragma('journal_mode = WAL');
+    this.db.pragma('foreign_keys = ON'); // Enable foreign key constraints
     this.initializeDatabase();
   }
 
@@ -99,6 +100,19 @@ class DatabaseService {
   }
 
   deleteUser(id) {
+    // Check if user has created transactions or payments
+    const hasTransactions = this.db.prepare(
+      'SELECT COUNT(*) as count FROM transactions WHERE created_by = ?'
+    ).get(id).count > 0;
+    
+    const hasPayments = this.db.prepare(
+      'SELECT COUNT(*) as count FROM payments WHERE created_by = ?'
+    ).get(id).count > 0;
+    
+    if (hasTransactions || hasPayments) {
+      throw new Error('Cannot delete user with existing transactions or payments.');
+    }
+    
     this.db.prepare('DELETE FROM users WHERE id = ?').run(id);
   }
 
@@ -224,6 +238,15 @@ class DatabaseService {
   }
 
   deleteProduct(id) {
+    // Check if product has transactions
+    const hasTransactions = this.db.prepare(
+      'SELECT COUNT(*) as count FROM transactions WHERE product_id = ?'
+    ).get(id).count > 0;
+    
+    if (hasTransactions) {
+      throw new Error('Cannot delete product with existing transactions. Consider deactivating it instead.');
+    }
+    
     this.db.prepare('DELETE FROM products WHERE id = ?').run(id);
   }
 
@@ -338,13 +361,16 @@ class DatabaseService {
   getDashboardStats() {
     const totalClients = this.db.prepare('SELECT COUNT(*) as count FROM clients').get().count;
 
-    const totalOutstanding = this.db.prepare(`
-      SELECT 
-        COALESCE(SUM(t.total_amount), 0) - COALESCE(SUM(p.amount), 0) as total
-      FROM clients c
-      LEFT JOIN transactions t ON c.id = t.client_id
-      LEFT JOIN payments p ON c.id = p.client_id
+    // Calculate total outstanding properly by getting sums separately to avoid double counting
+    const totalTransactions = this.db.prepare(`
+      SELECT COALESCE(SUM(total_amount), 0) as total FROM transactions
     `).get().total;
+    
+    const totalPayments = this.db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) as total FROM payments
+    `).get().total;
+    
+    const totalOutstanding = totalTransactions - totalPayments;
 
     const overdueAlerts = this.db.prepare(`
       SELECT COUNT(*) as count FROM payment_alerts

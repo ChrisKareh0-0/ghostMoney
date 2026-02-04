@@ -528,6 +528,47 @@ function setupIpcHandlers(ipcMain, db) {
             return { success: false, error: error.message };
         }
     });
+
+    // ==================== DATABASE BACKUP ====================
+    const path = require('path');
+    const fs = require('fs');
+    const { app, dialog } = require('electron');
+
+    ipcMain.handle('database:backup', async () => {
+        try {
+            const { filePath } = await dialog.showSaveDialog({
+                title: 'Backup Database',
+                defaultPath: path.join(app.getPath('documents'), `ghostmoney_backup_${Date.now()}.db`),
+                filters: [{ name: 'SQLite Database', extensions: ['db'] }]
+            });
+
+            if (filePath) {
+                const sourcePath = path.join(app.getPath('userData'), 'database.db');
+                fs.copyFileSync(sourcePath, filePath);
+                return { success: true, filePath };
+            }
+            return { success: false, error: 'Backup cancelled' };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('database:info', async () => {
+        try {
+            const dbPath = path.join(app.getPath('userData'), 'database.db');
+            const stats = fs.statSync(dbPath);
+            return {
+                success: true,
+                data: {
+                    path: dbPath,
+                    size: stats.size,
+                    modified: stats.mtime
+                }
+            };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
 }
 
 module.exports = { setupIpcHandlers };

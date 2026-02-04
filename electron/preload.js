@@ -84,4 +84,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     googleUpdateEvent: (googleEventId, reservation) => ipcRenderer.invoke('google:updateEvent', googleEventId, reservation),
     googleDeleteEvent: (googleEventId) => ipcRenderer.invoke('google:deleteEvent', googleEventId),
     googleDisconnect: () => ipcRenderer.invoke('google:disconnect'),
+
+    // Database Backup
+    backupDatabase: () => ipcRenderer.invoke('database:backup'),
+    getDatabaseInfo: () => ipcRenderer.invoke('database:info'),
 });

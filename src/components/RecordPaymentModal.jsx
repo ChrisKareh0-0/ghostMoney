@@ -20,6 +20,19 @@ function RecordPaymentModal({ client, user, onClose, onSuccess }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validate payment amount
+        const amount = parseFloat(formData.amount);
+        if (!formData.amount || isNaN(amount) || amount <= 0) {
+            setError('Please enter a valid payment amount');
+            return;
+        }
+        
+        if (amount > client.balance) {
+            setError('Payment amount cannot exceed the outstanding balance');
+            return;
+        }
+        
         setLoading(true);
         setError('');
 
@@ -79,16 +92,16 @@ function RecordPaymentModal({ client, user, onClose, onSuccess }) {
             title={`Record Payment - ${client.name}`}
             footer={
                 <>
-                    <button onClick={onClose} className="btn btn-secondary" disabled={loading}>
+                    <button type="button" onClick={onClose} className="btn btn-secondary" disabled={loading}>
                         Cancel
                     </button>
-                    <button onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
+                    <button type="submit" form="payment-form" className="btn btn-primary" disabled={loading || !formData.amount}>
                         {loading ? 'Processing...' : 'Record Payment'}
                     </button>
                 </>
             }
         >
-            <form onSubmit={handleSubmit}>
+            <form id="payment-form" onSubmit={handleSubmit}>
                 {error && <div className="alert alert-error">{error}</div>}
 
                 <div className="alert alert-warning" style={{ marginBottom: '1.5rem' }}>

@@ -12,19 +12,19 @@ function initLogger() {
         const logPath = path.join(app.getPath('userData'), 'debug.log');
         logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
+        // Store original console methods FIRST
+        const originalLog = console.log;
+        const originalError = console.error;
+
         const log = (message) => {
             const timestamp = new Date().toISOString();
             const logMessage = `[${timestamp}] ${message}\n`;
-            console.log(message);
             if (logStream) {
                 logStream.write(logMessage);
             }
         };
 
         // Override console methods
-        const originalLog = console.log;
-        const originalError = console.error;
-
         console.log = (...args) => {
             const message = args.join(' ');
             log(message);

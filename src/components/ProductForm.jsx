@@ -88,10 +88,11 @@ function ProductForm({ product, categories, onClose, onSuccess }) {
                     <input
                         type="number"
                         step="0.01"
-                        min="0"
+                        min="0.01"
                         className="form-input"
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        placeholder="0.00"
                         required
                     />
                 </div>
