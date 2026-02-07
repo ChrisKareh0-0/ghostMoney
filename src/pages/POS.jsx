@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
+import ClientRankBadge from '../components/ClientRankBadge';
 import './POS.css';
 
 function POS({ user }) {
@@ -15,6 +16,8 @@ function POS({ user }) {
     const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [rankInfo, setRankInfo] = useState(null);
+    const [clientPoints, setClientPoints] = useState(0);
 
     useEffect(() => {
         if (!client) {
@@ -22,7 +25,27 @@ function POS({ user }) {
             return;
         }
         loadCategories();
+        loadClientRankInfo();
     }, [client, navigate]);
+
+    useEffect(() => {
+        loadProducts();
+    }, [selectedCategory, searchTerm]);
+
+    const loadClientRankInfo = async () => {
+        try {
+            const pointsResult = await window.electronAPI.getClientPoints(client.id);
+            if (pointsResult.success) {
+                setClientPoints(pointsResult.data.total_points || 0);
+            }
+            const rankResult = await window.electronAPI.getClientRankInfo(pointsResult.data?.total_points || 0);
+            if (rankResult.success) {
+                setRankInfo(rankResult.data);
+            }
+        } catch (error) {
+            console.error('Error loading client rank info:', error);
+        }
+    };
 
     useEffect(() => {
         loadProducts();
@@ -83,6 +106,19 @@ function POS({ user }) {
         return cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
     };
 
+    const getTotalGhostPoints = () => {
+        return cart.reduce((sum, item) => sum + ((item.product.ghost_points || 0) * item.quantity), 0);
+    };
+
+    const getDiscount = () => {
+        if (!rankInfo?.currentRank?.discount_percent) return 0;
+        return (getTotalAmount() * rankInfo.currentRank.discount_percent) / 100;
+    };
+
+    const getFinalTotal = () => {
+        return getTotalAmount() - getDiscount();
+    };
+
     const handleCheckout = async () => {
         if (cart.length === 0) {
             setError('Please add at least one item to the cart');
@@ -93,12 +129,17 @@ function POS({ user }) {
         setError('');
 
         try {
+            const discountPercent = rankInfo?.currentRank?.discount_percent || 0;
+            
             for (const item of cart) {
+                // Calculate discounted price
+                const discountedPrice = item.product.price * (1 - discountPercent / 100);
+                
                 const result = await window.electronAPI.createTransaction({
                     clientId: client.id,
                     productId: item.product.id,
                     quantity: item.quantity,
-                    unitPrice: item.product.price,
+                    unitPrice: discountedPrice,
                     createdBy: user.id
                 });
 
@@ -107,7 +148,15 @@ function POS({ user }) {
                 }
             }
 
-            navigate('/clients', { state: { message: 'Charges added successfully!' } });
+            // Award GhostPoints to client
+            const totalPoints = getTotalGhostPoints();
+            if (totalPoints > 0) {
+                await window.electronAPI.addPointsToClient(client.id, totalPoints);
+            }
+
+            const pointsMessage = totalPoints > 0 ? ` 👻 +${totalPoints} GhostPoints awarded!` : '';
+            const discountMessage = discountPercent > 0 ? ` (${discountPercent}% discount applied)` : '';
+            navigate('/clients', { state: { message: `Charges added successfully!${discountMessage}${pointsMessage}` } });
         } catch (err) {
             setError(err.message || 'An error occurred');
             setLoading(false);
@@ -132,6 +181,9 @@ function POS({ user }) {
                 <div>
                     <h1>Point of Sale</h1>
                     <p className="text-muted">Adding charges for: <strong>{client.name}</strong></p>
+                    <div style={{ marginTop: '0.5rem' }}>
+                        <ClientRankBadge totalPoints={clientPoints} />
+                    </div>
                 </div>
                 <button onClick={handleCancel} className="btn btn-secondary">
                     ← Back to Clients
@@ -187,6 +239,15 @@ function POS({ user }) {
                                     <div className="product-name">{product.name}</div>
                                     <div className="product-category">{product.category_name}</div>
                                     <div className="product-price">${product.price.toFixed(2)}</div>
+                                    {product.ghost_points > 0 && (
+                                        <div style={{ 
+                                            fontSize: '0.75rem', 
+                                            color: 'var(--green-primary)',
+                                            marginTop: '0.25rem'
+                                        }}>
+                                            👻 +{product.ghost_points} GP
+                                        </div>
+                                    )}
                                 </button>
                             ))
                         )}
@@ -266,10 +327,32 @@ function POS({ user }) {
                                 <span>Items:</span>
                                 <span>{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
                             </div>
-                            <div className="summary-row total">
-                                <span>Total:</span>
+                            <div className="summary-row">
+                                <span>Subtotal:</span>
                                 <span>${getTotalAmount().toFixed(2)}</span>
                             </div>
+                            {getDiscount() > 0 && (
+                                <div className="summary-row" style={{ color: 'var(--success-color)' }}>
+                                    <span>Rank Discount ({rankInfo?.currentRank?.discount_percent}%):</span>
+                                    <span>-${getDiscount().toFixed(2)}</span>
+                                </div>
+                            )}
+                            <div className="summary-row total">
+                                <span>Total:</span>
+                                <span>${getFinalTotal().toFixed(2)}</span>
+                            </div>
+                            {getTotalGhostPoints() > 0 && (
+                                <div className="summary-row" style={{ 
+                                    color: 'var(--green-primary)', 
+                                    fontSize: '0.9rem',
+                                    marginTop: '0.5rem',
+                                    paddingTop: '0.5rem',
+                                    borderTop: '1px solid var(--border-color)'
+                                }}>
+                                    <span>👻 Points to earn:</span>
+                                    <span>+{getTotalGhostPoints()} GP</span>
+                                </div>
+                            )}
                         </div>
 
                         <button
@@ -278,7 +361,7 @@ function POS({ user }) {
                             disabled={loading || cart.length === 0}
                             style={{ fontSize: '1.1rem', padding: '1rem' }}
                         >
-                            {loading ? 'Processing...' : `Checkout - $${getTotalAmount().toFixed(2)}`}
+                            {loading ? 'Processing...' : `Checkout - $${getFinalTotal().toFixed(2)}`}
                         </button>
                     </div>
                 </div>

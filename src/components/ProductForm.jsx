@@ -6,7 +6,8 @@ function ProductForm({ product, categories, onClose, onSuccess }) {
         name: product?.name || '',
         categoryId: product?.category_id || (categories[0]?.id || ''),
         price: product?.price || '',
-        description: product?.description || ''
+        description: product?.description || '',
+        ghostPoints: product?.ghost_points || 0
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -20,7 +21,8 @@ function ProductForm({ product, categories, onClose, onSuccess }) {
             const data = {
                 ...formData,
                 categoryId: parseInt(formData.categoryId),
-                price: parseFloat(formData.price)
+                price: parseFloat(formData.price),
+                ghostPoints: parseInt(formData.ghostPoints) || 0
             };
 
             const result = product
@@ -95,6 +97,21 @@ function ProductForm({ product, categories, onClose, onSuccess }) {
                         placeholder="0.00"
                         required
                     />
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label">👻 GhostPoints</label>
+                    <input
+                        type="number"
+                        min="0"
+                        className="form-input"
+                        value={formData.ghostPoints}
+                        onChange={(e) => setFormData({ ...formData, ghostPoints: e.target.value })}
+                        placeholder="Points earned on purchase"
+                    />
+                    <small className="text-muted" style={{ marginTop: '0.25rem', display: 'block' }}>
+                        Points awarded to clients when they purchase this product
+                    </small>
                 </div>
 
                 <div className="form-group">

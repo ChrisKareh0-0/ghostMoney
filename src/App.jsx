@@ -10,6 +10,7 @@ import Clients from './pages/Clients';
 import Products from './pages/Products';
 import Users from './pages/Users';
 import Reports from './pages/Reports';
+import Settings from './pages/Settings';
 import POS from './pages/POS';
 
 function App() {
@@ -61,6 +62,9 @@ function App() {
                                     <Route path="/products" element={<Products user={user} />} />
                                     <Route path="/users" element={
                                         user.role === 'admin' ? <Users user={user} /> : <Navigate to="/" />
+                                    } />
+                                    <Route path="/settings" element={
+                                        user.role === 'admin' ? <Settings user={user} /> : <Navigate to="/" />
                                     } />
                                     <Route path="/reports" element={<Reports user={user} />} />
                                     <Route path="*" element={<Navigate to="/" />} />

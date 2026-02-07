@@ -29,6 +29,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     updateProduct: (id, data) => ipcRenderer.invoke('products:update', id, data),
     deleteProduct: (id) => ipcRenderer.invoke('products:delete', id),
 
+    // Ranks (GhostPoints System)
+    getRanks: () => ipcRenderer.invoke('ranks:getAll'),
+    getRank: (id) => ipcRenderer.invoke('ranks:get', id),
+    createRank: (data) => ipcRenderer.invoke('ranks:create', data),
+    updateRank: (id, data) => ipcRenderer.invoke('ranks:update', id, data),
+    deleteRank: (id) => ipcRenderer.invoke('ranks:delete', id),
+    getClientRankInfo: (totalPoints) => ipcRenderer.invoke('ranks:getClientRank', totalPoints),
+    addPointsToClient: (clientId, points) => ipcRenderer.invoke('points:add', clientId, points),
+    getClientPoints: (clientId) => ipcRenderer.invoke('points:getClient', clientId),
+
     // Transactions
     getClientTransactions: (clientId) => ipcRenderer.invoke('transactions:getByClient', clientId),
     getAllTransactions: (limit) => ipcRenderer.invoke('transactions:getAll', limit),

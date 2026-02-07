@@ -5,6 +5,7 @@ import SearchBar from '../components/SearchBar';
 import Modal from '../components/Modal';
 import ClientForm from '../components/ClientForm';
 import RecordPaymentModal from '../components/RecordPaymentModal';
+import ClientRankBadge from '../components/ClientRankBadge';
 
 function Clients({ user }) {
     const { refreshTrigger, triggerRefresh } = useDataRefresh();
@@ -154,6 +155,7 @@ function Clients({ user }) {
                         <thead>
                             <tr>
                                 <th>Name</th>
+                                <th>GhostPoints Rank</th>
                                 <th>Phone</th>
                                 <th>Email</th>
                                 <th>Balance Due</th>
@@ -164,6 +166,9 @@ function Clients({ user }) {
                             {clients.map(client => (
                                 <tr key={client.id}>
                                     <td style={{ fontWeight: 600 }}>{client.name}</td>
+                                    <td>
+                                        <ClientRankBadge totalPoints={client.total_points || 0} />
+                                    </td>
                                     <td>{client.phone || '-'}</td>
                                     <td>{client.email || '-'}</td>
                                     <td>

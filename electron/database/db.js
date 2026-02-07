@@ -56,6 +56,9 @@ class DatabaseService {
       const stmt = this.db.prepare('INSERT INTO pcs (name, description) VALUES (?, ?)');
       pcs.forEach(pc => stmt.run(pc.name, pc.description));
     }
+
+    // Create default ranks if none exist
+    this.seedDefaultRanks();
   }
 
   // ==================== AUTH ====================
@@ -222,19 +225,19 @@ class DatabaseService {
     return this.db.prepare(query).all(...params);
   }
 
-  createProduct(name, categoryId, price, description) {
+  createProduct(name, categoryId, price, description, ghostPoints = 0) {
     const result = this.db.prepare(`
-      INSERT INTO products (name, category_id, price, description)
-      VALUES (?, ?, ?, ?)
-    `).run(name, categoryId, price, description);
+      INSERT INTO products (name, category_id, price, description, ghost_points)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(name, categoryId, price, description, ghostPoints);
     return result.lastInsertRowid;
   }
 
-  updateProduct(id, name, categoryId, price, description) {
+  updateProduct(id, name, categoryId, price, description, ghostPoints = 0) {
     this.db.prepare(`
-      UPDATE products SET name = ?, category_id = ?, price = ?, description = ?, updated_at = CURRENT_TIMESTAMP
+      UPDATE products SET name = ?, category_id = ?, price = ?, description = ?, ghost_points = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(name, categoryId, price, description, id);
+    `).run(name, categoryId, price, description, ghostPoints, id);
   }
 
   deleteProduct(id) {
@@ -355,6 +358,90 @@ class DatabaseService {
 
   deleteAlert(id) {
     this.db.prepare('DELETE FROM payment_alerts WHERE id = ?').run(id);
+  }
+
+  // ==================== RANKS (GhostPoints System) ====================
+  getAllRanks() {
+    return this.db.prepare('SELECT * FROM ranks ORDER BY min_points ASC').all();
+  }
+
+  getRankById(id) {
+    return this.db.prepare('SELECT * FROM ranks WHERE id = ?').get(id);
+  }
+
+  createRank(name, minPoints, discountPercent, color, sortOrder) {
+    const result = this.db.prepare(`
+      INSERT INTO ranks (name, min_points, discount_percent, color, sort_order)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(name, minPoints, discountPercent, color, sortOrder);
+    return result.lastInsertRowid;
+  }
+
+  updateRank(id, name, minPoints, discountPercent, color, sortOrder) {
+    this.db.prepare(`
+      UPDATE ranks SET name = ?, min_points = ?, discount_percent = ?, color = ?, sort_order = ?
+      WHERE id = ?
+    `).run(name, minPoints, discountPercent, color, sortOrder, id);
+  }
+
+  deleteRank(id) {
+    this.db.prepare('DELETE FROM ranks WHERE id = ?').run(id);
+  }
+
+  getClientRank(totalPoints) {
+    // Get the highest rank that the client qualifies for
+    return this.db.prepare(`
+      SELECT * FROM ranks 
+      WHERE min_points <= ? 
+      ORDER BY min_points DESC 
+      LIMIT 1
+    `).get(totalPoints);
+  }
+
+  getNextRank(totalPoints) {
+    // Get the next rank the client needs to reach
+    return this.db.prepare(`
+      SELECT * FROM ranks 
+      WHERE min_points > ? 
+      ORDER BY min_points ASC 
+      LIMIT 1
+    `).get(totalPoints);
+  }
+
+  addPointsToClient(clientId, points) {
+    this.db.prepare(`
+      UPDATE clients SET total_points = total_points + ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(points, clientId);
+    
+    // Return updated client
+    return this.getClientById(clientId);
+  }
+
+  getClientPoints(clientId) {
+    const client = this.db.prepare('SELECT total_points FROM clients WHERE id = ?').get(clientId);
+    return client ? client.total_points : 0;
+  }
+
+  seedDefaultRanks() {
+    // Create default ranks if none exist
+    const rankCount = this.db.prepare('SELECT COUNT(*) as count FROM ranks').get();
+    if (rankCount.count === 0) {
+      const defaultRanks = [
+        { name: 'Newcomer', minPoints: 0, discount: 0, color: '#808080', order: 1 },
+        { name: 'Bronze', minPoints: 100, discount: 2, color: '#cd7f32', order: 2 },
+        { name: 'Silver', minPoints: 300, discount: 5, color: '#c0c0c0', order: 3 },
+        { name: 'Gold', minPoints: 600, discount: 8, color: '#ffd700', order: 4 },
+        { name: 'Platinum', minPoints: 1000, discount: 12, color: '#e5e4e2', order: 5 },
+        { name: 'Diamond', minPoints: 2000, discount: 15, color: '#b9f2ff', order: 6 },
+        { name: 'Ghost', minPoints: 5000, discount: 20, color: '#00ff41', order: 7 },
+      ];
+      const stmt = this.db.prepare(`
+        INSERT INTO ranks (name, min_points, discount_percent, color, sort_order) 
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      defaultRanks.forEach(rank => stmt.run(rank.name, rank.minPoints, rank.discount, rank.color, rank.order));
+    }
   }
 
   // ==================== DASHBOARD STATS ====================

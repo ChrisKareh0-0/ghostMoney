@@ -16,8 +16,20 @@ CREATE TABLE IF NOT EXISTS clients (
     phone TEXT,
     email TEXT,
     notes TEXT,
+    total_points INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Loyalty Ranks (GhostPoints system)
+CREATE TABLE IF NOT EXISTS ranks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    min_points INTEGER NOT NULL,
+    discount_percent REAL NOT NULL DEFAULT 0,
+    color TEXT DEFAULT '#00ff41',
+    sort_order INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Product categories
@@ -35,6 +47,7 @@ CREATE TABLE IF NOT EXISTS products (
     category_id INTEGER NOT NULL,
     price REAL NOT NULL,
     description TEXT,
+    ghost_points INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE

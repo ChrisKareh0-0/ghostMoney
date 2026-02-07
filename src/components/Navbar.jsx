@@ -29,6 +29,11 @@ function Navbar({ user, onLogout }) {
                             Users
                         </NavLink>
                     )}
+                    {user.role === 'admin' && (
+                        <NavLink to="/settings" className={({ isActive }) => isActive ? 'active' : ''}>
+                            Settings
+                        </NavLink>
+                    )}
                     <NavLink to="/reports" className={({ isActive }) => isActive ? 'active' : ''}>
                         Reports
                     </NavLink>

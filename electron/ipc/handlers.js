@@ -136,7 +136,7 @@ function setupIpcHandlers(ipcMain, db) {
 
     ipcMain.handle('products:create', async (event, data) => {
         try {
-            const id = db.createProduct(data.name, data.categoryId, data.price, data.description);
+            const id = db.createProduct(data.name, data.categoryId, data.price, data.description, data.ghostPoints || 0);
             return { success: true, id };
         } catch (error) {
             return { success: false, error: error.message };
@@ -145,7 +145,7 @@ function setupIpcHandlers(ipcMain, db) {
 
     ipcMain.handle('products:update', async (event, id, data) => {
         try {
-            db.updateProduct(id, data.name, data.categoryId, data.price, data.description);
+            db.updateProduct(id, data.name, data.categoryId, data.price, data.description, data.ghostPoints || 0);
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -309,6 +309,80 @@ function setupIpcHandlers(ipcMain, db) {
         try {
             const filePath = await exportToPDF(type, data);
             return { success: true, filePath };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    // ==================== RANKS (GhostPoints) ====================
+    ipcMain.handle('ranks:getAll', async () => {
+        try {
+            return { success: true, data: db.getAllRanks() };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('ranks:get', async (event, id) => {
+        try {
+            return { success: true, data: db.getRankById(id) };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('ranks:create', async (event, data) => {
+        try {
+            const id = db.createRank(data.name, data.minPoints, data.discountPercent, data.color, data.sortOrder);
+            return { success: true, id };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('ranks:update', async (event, id, data) => {
+        try {
+            db.updateRank(id, data.name, data.minPoints, data.discountPercent, data.color, data.sortOrder);
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('ranks:delete', async (event, id) => {
+        try {
+            db.deleteRank(id);
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('ranks:getClientRank', async (event, totalPoints) => {
+        try {
+            const currentRank = db.getClientRank(totalPoints);
+            const nextRank = db.getNextRank(totalPoints);
+            return { success: true, data: { currentRank, nextRank } };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('points:add', async (event, clientId, points) => {
+        try {
+            const updatedClient = db.addPointsToClient(clientId, points);
+            return { success: true, data: updatedClient };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('points:getClient', async (event, clientId) => {
+        try {
+            const points = db.getClientPoints(clientId);
+            const currentRank = db.getClientRank(points);
+            const nextRank = db.getNextRank(points);
+            return { success: true, data: { points, currentRank, nextRank } };
         } catch (error) {
             return { success: false, error: error.message };
         }
